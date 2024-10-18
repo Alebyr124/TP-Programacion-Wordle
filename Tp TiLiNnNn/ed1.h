@@ -5,7 +5,6 @@
 
 typedef struct word {
   char palabra[LARGO_PALABRA+1];
-  char letras_no_permitidas[28];
   int prioridad;
 } word;
 

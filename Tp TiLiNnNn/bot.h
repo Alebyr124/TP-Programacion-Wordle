@@ -9,8 +9,10 @@
 
 #define MAX_INTENTOS 6
 #define LARGO_PALABRA 5
+#define ALFABETO_SIZE 27
 
 
 
-int cumple_condiciones(char palabra_intento[], char letras_acertadas[], word *intento_actual);
+int cumple_condiciones(char palabra_intento[], char letras_acertadas[], int letras_no_permitidas[], word *intento_actual);
+int tiene_repeticiones(char palabra[], char letra);
 

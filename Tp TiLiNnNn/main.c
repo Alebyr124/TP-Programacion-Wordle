@@ -3,17 +3,52 @@
 int main(int argc, char** argv) {
     
     // Definicion de variables
-    char palabra_secreta[LARGO_PALABRA+1]; 
-    intento *intento_jugable =(intento*)malloc(MAX_INTENTOS*sizeof(intento));
-
-    // Verifica si la palabra secreta es válida
-    assert(argc > 1 && strlen(argv[1]) == 5);
-    strcpy(palabra_secreta, argv[1]); 
+    char palabra_secreta[LARGO_PALABRA + 1]; 
+    intento intento_jugable[MAX_INTENTOS];
+    intento intento_prueba[MAX_INTENTOS];
 
     // Inicialización de los intentos
     for (int i = 0; i < MAX_INTENTOS; i++) {
         strcpy(intento_jugable[i].letras_acertadas, "*****");
+        strcpy(intento_prueba[i].letras_acertadas, "*****");
+        strcpy(intento_prueba[i].palabra, "");
+
     }
+
+    FILE *archivo = fopen("bd.txt", "r");
+    if (archivo == NULL) {
+        printf("Error al abrir el archivo.\n");
+        return 1;
+    }
+
+    MaxHeap* heap = crear_heap(1); 
+    word intento_bot;
+    int letras_no_permitidas[ALFABETO_SIZE];
+    for (int k = 0; k < ALFABETO_SIZE; k++) {
+        letras_no_permitidas[k] = 0; // Inicializa a 0 (permitido)
+    }
+
+    // Leer palabras del archivo y añadir al heap
+    while (fscanf(archivo, "%[^,],%d\n", intento_bot.palabra, &intento_bot.prioridad) != EOF) {
+        if (heap->tamano == heap->capacidad)
+            expandir_heap(heap);
+        insertar_heap(heap, intento_bot);
+    }
+    
+    srand(time(NULL));
+    int random = rand() % heap->tamano;
+    int random2;
+    do {
+        random2 = rand() % heap->tamano;
+    } while (random2 == random);  
+
+    // Verifica si la palabra secreta es válida
+    if(argc > 1 && strlen(argv[1]) == 5){
+        *argv[1] = tolower(*argv[1]);
+        strcpy(palabra_secreta, argv[1]);
+    } 
+    else 
+        strcpy(palabra_secreta, heap->datos[random2].palabra);
 
     // Menú inicial
     printf("\n\n\t\t\t\tWORDLE: EL JUEGO");
@@ -22,76 +57,57 @@ int main(int argc, char** argv) {
     printf("\n\n\t\t\tPulse ENTER para continuar");
     getchar();
 
+    //jugable(palabra_secreta, intento_jugable);
+    sleep(1);
+    printf("\n\n\t\t\tPulse ENTER para continuar");
+    getchar();
 
-
-    // Modo de juego jugable
-    //jugable(palabra_secreta, &intento_jugable);
-
-
-
-
-    srand(time(NULL));
-
-    FILE *archivo = fopen("bd.txt", "r");
-    if (archivo == NULL) {
-        printf("Error al abrir el archivo.\n");
-        return 1;
-    }
-    
-    MaxHeap* heap = crear_heap(1); 
-    word intento_bot;
-    int cant_palabras = 0;
-    
-    // Leer palabras del archivo y añadir al heap
-    while (fscanf(archivo, "%5[^,],%d\n", intento_bot.palabra, &intento_bot.prioridad) != EOF) {
-        insertar_heap(heap, intento_bot);
-        cant_palabras++;
-        if(heap->capacidad == cant_palabras-1)
-            expandir_heap(heap);
-    }
-    
-
-    int random = rand() % cant_palabras;
-    intento *intento_prueba = (intento *)malloc(sizeof(intento));
-
-    strcpy(intento_prueba->palabra, heap->datos[random].palabra);
-    strcpy(intento_prueba->letras_acertadas, "*****");
+    printf("INTENTO BOT\n\n");
+    strcpy(intento_prueba[0].palabra, heap->datos[random].palabra);
+    printf("Palabra a adivinar: %s\n\n", palabra_secreta);
 
     for (int k = 0; k < MAX_INTENTOS; k++) {
-        verificar(palabra_secreta, intento_prueba);
+        // Verificar el intento actual
+        verificar(palabra_secreta, &intento_prueba[k]);
+        //system(limpiar);
+        printf("\n\tINTENTO BOT\n\n");
+        printf("\tPalabra a adivinar: %s\n\n", palabra_secreta);
+        tablero(k, intento_prueba);
 
-        printf("%s  %s\n", intento_prueba->letras_acertadas, intento_prueba->palabra);
-        
-        // Re-crear el heap auxiliar para cada intento
-        MaxHeap* arbol_aux = crear_heap(100);
+        // Si el bot ha adivinado la palabra
+        if (strcmp(intento_prueba[k].palabra, palabra_secreta) == 0) {
+            printf("\nEl bot ha adivinado la palabra %s en el intento %d!\n", palabra_secreta, k + 1);
+            break;
+        }
+
+        // Filtrar el heap después de cada intento
+        int nuevo_tamano = 0;  // Mantendrá el tamaño del heap después de filtrar
+        printf("%d",heap->tamano);
         for (int i = 0; i < heap->tamano; i++) {
-            if (cumple_condiciones(intento_prueba->palabra, intento_prueba->letras_acertadas, &heap->datos[i])) {
-                insertar_heap(arbol_aux, heap->datos[i]);
-                if(heap->capacidad == i-1)
-                    expandir_heap(heap);
+            if (cumple_condiciones(intento_prueba[k].palabra, intento_prueba[k].letras_acertadas, letras_no_permitidas, &heap->datos[i])) {
+                heap->datos[nuevo_tamano] = heap->datos[i]; // Guardar solo las palabras que cumplen las condiciones
+                nuevo_tamano++;
             }
         }
+        heap->tamano = nuevo_tamano;
 
-        if (arbol_aux->tamano > 0) {
-            printf("La palabra en la raíz del árbol es: %s\n", arbol_aux->datos[0].palabra);
-            strcpy(intento_prueba->palabra, arbol_aux->datos[0].palabra);
-        } else {
-            printf("No hay palabras que cumplan las condiciones.\n");
+        // Si el heap se queda sin palabras, el bot ha fallado
+        if (heap->tamano == 0) {
+            printf("No hay más palabras posibles en el heap, el bot falló.\n");
+            k = MAX_INTENTOS; // Rompe el bucle si el heap está vacío
         }
-        
-        liberar_heap(arbol_aux);
-
+        else {
+            // Copiar la siguiente palabra del heap en el próximo intento
+            strcpy(intento_prueba[k + 1].palabra, heap->datos[0].palabra);
+        }
     }
 
+    for(int i = 0; i < MAX_INTENTOS; i++)
+        printf("%s  %s\n", intento_prueba[i].letras_acertadas, intento_prueba[i].palabra);
+    for(int i=0; i < heap->tamano;i++)
+        printf("%s  ", heap->datos[i].palabra);
 
-    
     fclose(archivo);
     liberar_heap(heap);
-    //free(intento_prueba);
-
-
     return 0;
 }
-
-
-

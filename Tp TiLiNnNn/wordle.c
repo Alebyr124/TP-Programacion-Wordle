@@ -3,7 +3,7 @@
 void jugable(char palabra_secreta[], intento intento_actual[]){
     int gano = 0;
     // Bucle de intentos
-    for (int Nintentos = 0; Nintentos < MAX_INTENTOS && gano; Nintentos++) {
+    for (int Nintentos = 0; Nintentos < MAX_INTENTOS && !gano; Nintentos++) {
         system(limpiar);  // Limpia pantalla
         tablero(Nintentos, intento_actual);  // Muestra tablero
         printf("Intentos restantes: %d\n", MAX_INTENTOS-Nintentos);
@@ -12,6 +12,7 @@ void jugable(char palabra_secreta[], intento intento_actual[]){
         while(strlen(intento_actual[Nintentos].palabra) != 5){
             printf("Ingrese la palabra de 5 letras que desea adivinar: ");
             scanf("%s", intento_actual[Nintentos].palabra);
+            *intento_actual[Nintentos].palabra = tolower(*intento_actual[Nintentos].palabra);
         }
 
         // Si adivina la palabra
@@ -50,7 +51,6 @@ void tablero(int Nintentos, intento intento_actual[]) {
     printf("\n\t\t\t╚═══╩═══╩═══╩═══╩═══╝\n\n");
 }
 
-// Verifica el intento actual comparándolo con la palabra secreta
 int verificar(char palabra_secreta[], intento* intento_actual) {
     if (strcmp(intento_actual->palabra, palabra_secreta) == 0) 
         return 1;  // Palabra adivinada correctamente
@@ -61,7 +61,7 @@ int verificar(char palabra_secreta[], intento* intento_actual) {
                 intento_actual->letras_acertadas[i] = intento_actual->palabra[i];
             else {
                 for (int j = 0; j < LARGO_PALABRA; j++) {
-                    if (palabra_secreta[i] == intento_actual->palabra[j]){
+                    if (palabra_secreta[i] == intento_actual->palabra[j] && intento_actual->letras_acertadas[j] == '*'){
                         intento_actual->letras_acertadas[j] = '+';
                         j = LARGO_PALABRA;
                     }

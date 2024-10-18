@@ -3,7 +3,6 @@
 #include <string.h>
 #include <unistd.h>
 #include <ctype.h>
-#include <assert.h>
 #include "bot.h"
 
 #define MAX_INTENTOS 6

@@ -43,7 +43,7 @@ void insertar_heap(MaxHeap* heap, word nueva_palabra) {
 word eliminar_maximo(MaxHeap* heap) {
     word max = heap->datos[0]; // Guardar el máximo
     heap->datos[0] = heap->datos[heap->tamano - 1]; // Reemplazar raíz con el último elemento
-    heap->tamano--;
+    heap->tamano--; // Reducir el tamaño
 
     // Ajustar el heap (hacer heapify hacia abajo)
     int i = 0;
@@ -73,12 +73,18 @@ word eliminar_maximo(MaxHeap* heap) {
     return max;
 }
 
+
 void liberar_heap(MaxHeap* heap) {
-    if (heap) {
-        free(heap->datos);
+    if (heap != NULL) {
+        if (heap->datos != NULL) {
+            free(heap->datos);
+            heap->datos = NULL; // Evitar acceso a memoria liberada
+        }
         free(heap);
+        heap = NULL; // Evitar acceso a memoria liberada
     }
 }
+
 
 void expandir_heap(MaxHeap* heap) {
     int nueva_capacidad = heap->capacidad * 2;  // Duplicar la capacidad
